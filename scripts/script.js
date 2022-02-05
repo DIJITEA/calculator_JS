@@ -1,14 +1,19 @@
-console.log("hello");
 let GetForm = document.forms.calculator;
 
 let resultValue = GetForm.elements.result;
 let calculationsValue = GetForm.elements.calculations;
+function windowUpdate() {
+  resultValue.value = InputString.inputValue;
+  calculationsValue.value = InputString.outputValue;
+  if (InputString.outputValue === "error: division by zero") InputString = new CalculationClass("");
+}
 
 let formNumButtons = GetForm.elements.number;
 formNumButtons.forEach((e) => {
   e.addEventListener("click", (e) => {
     let value = e.path[0].value;
-    LiveNum = setResult(value);
+    InputString.inputSet = value;
+    windowUpdate();
   });
 });
 
@@ -16,116 +21,78 @@ let formExpressionButtons = GetForm.elements.expression;
 formExpressionButtons.forEach((e) => {
   e.addEventListener("click", () => {
     let expression = e.value;
-    setCalculations(expression);
+    InputString.expressionSwitcher(expression);
+    windowUpdate();
   });
 });
 
-let AccessExpression = false;
+class CalculationClass {
+  constructor() {
+    this.input = "0";
+    this.output = "0";
+  }
+  get inputValue() {
+    return this.input;
+  }
+  get outputValue() {
+    if (this.output.includes("/0")) this.output = "error: division by zero"
+    return this.output;
+  }
+  set inputSet(val) {
+    if (this.input === "0") {
+      this.input = val;
+    } else this.input = this.input + val;
+  }
 
-function setResult(value) {
-  if (resultValue.value === "0") resultValue.value = value;
-  else resultValue.value = resultValue.value + value;
-  AccessExpression = true;
-  return resultValue.value;
-}
-function resetResult() {
-  resultValue.value = "0";
-}
-function resetAll() {
-  resetResult();
-  LiveNum = resultValue.value;
-  calculationsValue.value = "0";
-  TempNum = undefined;
-  TempExpression = undefined;
-  AccessExpression = false;
-}
-let LiveNum = resultValue.value;
-let TempNum;
-let TempExpression;
-
-function setCalculations(expression) {
-  TempNum = LiveNum;
-  switch (expression) {
-    case "1 /":
-      if (LiveNum != "0") {
-        LiveNum = 1 / LiveNum;
-        resetResult();
-        LiveNum = setResult(LiveNum);
-      }
-      break;
-    case "^ 2":
-      if (LiveNum != "0") {
-        LiveNum = LiveNum * LiveNum;
-        resetResult();
-        LiveNum = setResult(LiveNum);
-      }
-      break;
-    case "√":
-      if (LiveNum != "0") {
-        LiveNum = Math.sqrt(LiveNum);
-        resetResult();
-        LiveNum = setResult(LiveNum);
-      }
-      break;
-    case "+/-":
-      if (LiveNum != "0") {
-        LiveNum = `(${LiveNum * -1})`;
-        resetResult();
-        LiveNum = setResult(LiveNum);
-      }
-      break;
-    case ".":
-      if (!LiveNum.includes(".")) {
-        resetResult();
-        LiveNum = setResult(`${LiveNum}.`);
-      }
-      break;
-    case "CE":
-      resetResult();
-      break;
-    case "⌫":
-      if (LiveNum != "0" && LiveNum.length !== 1) {
-        resetResult();
-        LiveNum = setResult(LiveNum.slice(0, -1));
-      } else {
-        resetResult();
-        LiveNum = "0";
-      }
-      break;
-    case "C":
-      resetAll();
-      break;
-    case "=":
-      console.log("=");
-      if (calculationsValue.value == "0") {
-        calculationsValue.value = LiveNum;
-      } else if (AccessExpression) {
-        calculationsValue.value = calculationsValue.value + LiveNum;
-      }
-      getExpressionResult();
-      break;
-    default:
-      if (AccessExpression) {
-        if (calculationsValue.value != "0")
-          calculationsValue.value =
-            calculationsValue.value + expression + LiveNum;
-        else calculationsValue.value = LiveNum + expression;
-        LiveNum = "0";
-        TempExpression = expression;
-        AccessExpression = false;
-        resetResult();
-      }
-      break;
+  expressionSwitcher(expression) {
+    switch (expression) {
+      case "1 /":
+        if (this.input != 0) this.input = 1 / this.input;
+        break;
+      case "^ 2":
+        if (this.input != "0") this.input = this.input * this.input;
+        break;
+      case "√":
+        if (this.input != "0") this.input = Math.sqrt(this.input);
+        break;
+      case "+/-":
+        if (this.input != "0") this.input = `${this.input * -1}`;
+        break;
+      case "CE":
+        this.input = "0";
+        break;
+      case "⌫":
+        if (this.input.length !== 1) {
+          this.input = this.input.slice(0, -1);
+        } else this.input = "0";
+        break;
+      case "C":
+        this.input = "0";
+        this.output = "0";
+        break;
+      case ".":
+        if (!this.input.includes(".")) {
+          this.input = this.input + ".";
+        }
+        break;
+      case "=":
+        this.output =
+          this.output + this.input + " = " + eval(this.output + this.input);
+        this.input = "0";
+        break;
+      default:
+        if (this.output === "0") {
+          this.output = this.input + expression;
+          this.input = "0";
+        } else if (this.output.includes("=")) {
+          let tempIndex = this.output.indexOf("=", 1);
+          this.output = this.output.slice(tempIndex + 1) + expression;
+        } else {
+          this.output = this.output + this.input + expression;
+          this.input = "0";
+        }
+        break;
+    }
   }
 }
-
-function getExpressionResult() {
-  console.log(calculationsValue.value + LiveNum);
-
-  console.log(eval(calculationsValue.value));
-
-  let temp = eval(calculationsValue.value);
-  resetAll();
-  LiveNum = "0";
-  calculationsValue.value = temp;
-}
+let InputString = new CalculationClass("");
